@@ -1,0 +1,25 @@
+.tada-list-header {
+  margin: 0.5em 0 0 0;
+}
+
+ul.tada-list {
+  list-style: none;
+  margin: 0 0 1em 0;
+}
+
+ul.tada-list > li.tada-list-item {
+  text-indent: -2em;
+}
+
+ul.tada-list > li.tada-list-item > .tada-list-item-checkbox {
+  width: 15px;
+  height: 15px;
+  position: relative;
+  top: 3px;
+  margin-right: 0.5px;
+}
+
+ul.tada-list > li.tada-list-item > .tada-list-item.is-checked {
+  text-decoration: line-through;
+  color: var(--text-faint);
+}

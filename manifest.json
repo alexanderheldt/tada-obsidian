@@ -1,0 +1,10 @@
+{
+  "id": "tada-obsidian",
+  "name": "TADA list manager",
+  "version": "0.0.1",
+  "minAppVersion": "0.9.17",
+  "description": "TODO list manager",
+  "author": "Alexander Heldt",
+  "authorUrl": "https://alexanderheldt.se",
+  "isDesktopOnly": false
+}
