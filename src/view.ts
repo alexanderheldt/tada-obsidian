@@ -38,7 +38,7 @@ export default class View extends ItemView {
   }
 
   drawItems(itemsByFile: { [fileName: string]: Item[] }) {
-    // <div>
+    // <div class='tada-list-container'>
     //  <h3>{fileName}</h3>
     //   <ul class='tada-list'>
     //     <li class='tada-list-item'>
@@ -53,6 +53,7 @@ export default class View extends ItemView {
     // </div>
     for (const [fileName, items] of Object.entries(itemsByFile)) {
       const div = this.containerEl.children[1].createEl('div');
+      div.className = 'tada-list-container';
 
       const header = this.containerEl.children[1].createEl('h4');
       header.className = 'tada-list-header';
