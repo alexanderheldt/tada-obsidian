@@ -54,6 +54,7 @@ export default class View extends ItemView {
     for (const [fileName, items] of Object.entries(itemsByFile)) {
       const div = this.containerEl.children[1].createEl('div');
       div.className = 'tada-list-container';
+      div.onclick = () => this.app.workspace.openLinkText(fileName, fileName);
 
       const header = this.containerEl.children[1].createEl('h4');
       header.className = 'tada-list-header';
