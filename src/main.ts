@@ -14,7 +14,7 @@ export default class TADA extends Plugin {
 
     this.registerView(
       VIEW_TYPE_TADA,
-      (leaf: WorkspaceLeaf) => (this.tadaView = new View(leaf))
+      (leaf: WorkspaceLeaf) => (this.tadaView = new View(this, leaf))
     );
 
     if (this.app.workspace.layoutReady) {

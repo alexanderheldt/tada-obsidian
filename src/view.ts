@@ -1,4 +1,4 @@
-import { ItemView, WorkspaceLeaf } from 'obsidian';
+import { Plugin, ItemView, WorkspaceLeaf } from 'obsidian';
 
 import { VIEW_TYPE_TADA } from './constants';
 import Item from './item';
@@ -6,13 +6,17 @@ import Item from './item';
 const selectedItemEvent = new Event('selected-item');
 
 export default class View extends ItemView {
+  private plugin: Plugin;
+
   private itemLists: HTMLDivElement;
   private selectedItemsList: HTMLDivElement;
 
   private selectedItems: { [fileName: string]: Item[] };
 
-  constructor(leaf: WorkspaceLeaf) {
+  constructor(plugin: Plugin, leaf: WorkspaceLeaf) {
     super(leaf);
+
+    this.plugin = plugin;
 
     const container = this.containerEl.children[1].createEl('div');
     container.className = 'tada-container';
