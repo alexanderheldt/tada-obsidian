@@ -6,12 +6,12 @@ import Item from './item';
 const selectedItemEvent = new Event('selected-item');
 
 export default class View extends ItemView {
+  selectedItems: { [fileName: string]: Item[] };
+
   private plugin: Plugin;
 
   private itemLists: HTMLDivElement;
   private selectedItemsList: HTMLDivElement;
-
-  private selectedItems: { [fileName: string]: Item[] };
 
   constructor(plugin: Plugin, leaf: WorkspaceLeaf) {
     super(leaf);
@@ -31,8 +31,6 @@ export default class View extends ItemView {
     const itemLists = container.createEl('div');
     itemLists.className = 'tada-lists';
     this.itemLists = itemLists;
-
-    this.selectedItems = {};
   }
 
   getViewType(): string {
@@ -45,6 +43,14 @@ export default class View extends ItemView {
 
   getIcon() {
     return 'tada-list-icon';
+  }
+
+  async onload() {
+    this.selectedItems = await this.plugin.loadData() || {};
+  }
+
+  async onunload() {
+    await this.plugin.saveData(this.selectedItems);
   }
 
   removeItemsFrom(parent: HTMLDivElement) {

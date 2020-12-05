@@ -81,6 +81,8 @@ export default class TADA extends Plugin {
   }
 
   onunload() {
+    this.saveData(this.tadaView.selectedItems);
+
     this.app.workspace
       .getLeavesOfType(VIEW_TYPE_TADA)
       .forEach(l => l.detach());
