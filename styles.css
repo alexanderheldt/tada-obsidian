@@ -1,22 +1,38 @@
-.tada-list-container:hover, .tada-list-container *:hover {
-  cursor: pointer;
+.tada-selected-list {
+  border: 1px solid var(--text-accent);
+}
+
+.tada-selected-list > .tada-list:hover, .tada-lists > .tada-list:hover {
   background-color: var(--background-secondary-alt);
 }
 
 .tada-list-header {
   margin: 0.5em 0 0 0;
+  color: var(--text-accent);
+}
+.tada-list > .tada-list-header:hover {
+  cursor: pointer;
 }
 
-ul.tada-list {
+.tada-list ul {
   list-style: none;
   margin: 0 0 1em 0;
 }
 
-ul.tada-list > li.tada-list-item {
+.tada-list li.tada-list-item {
   text-indent: -2em;
 }
 
-ul.tada-list > li.tada-list-item > .tada-list-item-checkbox {
+.tada-list li.tada-list-item:hover {
+  cursor: pointer;
+  background-color: var(--background-primary);
+}
+
+.tada-list > li *:hover {
+  cursor: pointer;
+}
+
+.tada-list li.tada-list-item > .tada-list-item-checkbox {
   width: 15px;
   height: 15px;
   position: relative;
@@ -24,7 +40,7 @@ ul.tada-list > li.tada-list-item > .tada-list-item-checkbox {
   margin-right: 0.5px;
 }
 
-ul.tada-list > li.tada-list-item > .tada-list-item.is-checked {
+.tada-list li.tada-list-item > .tada-list-item.is-checked {
   text-decoration: line-through;
   color: var(--text-faint);
 }
