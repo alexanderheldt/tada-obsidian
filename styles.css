@@ -7,9 +7,10 @@
 }
 
 .tada-list-header {
-  margin: 0.5em 0 0 0;
+  margin: 0.5em 0 0 0.5em;
   color: var(--text-accent);
 }
+
 .tada-list > .tada-list-header:hover {
   cursor: pointer;
 }
@@ -20,12 +21,12 @@
 }
 
 .tada-list li.tada-list-item {
-  text-indent: -2em;
+  margin-left: -2em;
 }
 
 .tada-list li.tada-list-item:hover {
   cursor: pointer;
-  background-color: var(--background-primary);
+  background-color: var(--background-secondary);
 }
 
 .tada-list > li *:hover {

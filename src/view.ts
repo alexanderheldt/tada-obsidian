@@ -26,8 +26,6 @@ export default class View extends ItemView {
     selectedItemsList.addEventListener('selected-item', this.updateSelectedItems.bind(this));
     this.selectedItemsList = selectedItemsList;
 
-    container.createEl('hr');
-
     const itemLists = container.createEl('div');
     itemLists.className = 'tada-lists';
     this.itemLists = itemLists;
