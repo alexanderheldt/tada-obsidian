@@ -82,7 +82,6 @@ export default class View extends ItemView {
       listHeader.className = 'tada-list-header';
       listHeader.innerHTML = fileName;
       listHeader.onclick = () => this.app.workspace.openLinkText(fileName, fileName);
-      list.appendChild(listHeader);
 
       const ul = list.createEl('ul');
 
@@ -99,17 +98,11 @@ export default class View extends ItemView {
         checkbox.className = 'tada-list-item-checkbox';
         checkbox.checked = s.checked;
         checkbox.disabled = true;
-        li.appendChild(checkbox);
 
         const label = li.createEl('label');
         label.innerHTML = s.content;
         label.className = s.checked ? 'tada-list-item is-checked' : 'tada-list-item';
-        li.appendChild(label);
-        ul.appendChild(li);
       }
-
-      list.appendChild(ul);
-      this.selectedItemsList.appendChild(list);
     }
   }
 
@@ -122,7 +115,6 @@ export default class View extends ItemView {
       listHeader.className = 'tada-list-header';
       listHeader.innerHTML = fileName;
       listHeader.onclick = () => this.app.workspace.openLinkText(fileName, fileName);
-      list.appendChild(listHeader);
 
       const ul = list.createEl('ul');
       ul.className = 'tada-list';
@@ -136,7 +128,6 @@ export default class View extends ItemView {
             }
           });
         }
-
 
         const li = ul.createEl('li');
         li.className = 'tada-list-item';
@@ -159,17 +150,11 @@ export default class View extends ItemView {
         checkbox.className = 'tada-list-item-checkbox';
         checkbox.checked = i.checked;
         checkbox.disabled = true;
-        li.appendChild(checkbox);
 
         const label = li.createEl('label');
         label.innerHTML = i.content;
         label.className = i.checked ? 'tada-list-item is-checked' : 'tada-list-item';
-        li.appendChild(label);
-        ul.appendChild(li);
       }
-
-      list.appendChild(ul);
-      this.itemLists.appendChild(list);
     }
   }
 };
