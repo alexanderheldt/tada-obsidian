@@ -1,8 +1,8 @@
-.tada-selected-list {
+.tada-selected-lists {
   border: 1px solid var(--text-accent);
 }
 
-.tada-selected-list > .tada-list:hover, .tada-lists > .tada-list:hover {
+.tada-selected-lists > .tada-list:hover, .tada-lists > .tada-list:hover {
   background-color: var(--background-secondary-alt);
 }
 

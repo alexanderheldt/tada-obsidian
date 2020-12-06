@@ -11,7 +11,7 @@ export default class View extends ItemView {
   private plugin: Plugin;
 
   private itemLists: HTMLDivElement;
-  private selectedItemsList: HTMLDivElement;
+  private selectedItemsLists: HTMLDivElement;
 
   constructor(plugin: Plugin, leaf: WorkspaceLeaf) {
     super(leaf);
@@ -21,10 +21,10 @@ export default class View extends ItemView {
     const container = this.containerEl.children[1].createEl('div');
     container.className = 'tada-container';
 
-    const selectedItemsList = container.createEl('div');
-    selectedItemsList.className = 'tada-selected-list';
-    selectedItemsList.addEventListener('selected-item', this.updateSelectedItems.bind(this));
-    this.selectedItemsList = selectedItemsList;
+    const selectedItemsLists = container.createEl('div');
+    selectedItemsLists.className = 'tada-selected-lists';
+    selectedItemsLists.addEventListener('selected-item', this.updateSelectedItems.bind(this));
+    this.selectedItemsLists = selectedItemsLists;
 
     const itemLists = container.createEl('div');
     itemLists.className = 'tada-lists';
@@ -58,7 +58,7 @@ export default class View extends ItemView {
   }
 
   updateSelectedItems() {
-    this.removeItemsFrom(this.selectedItemsList);
+    this.removeItemsFrom(this.selectedItemsLists);
     this.drawSelectedItems(this.selectedItems);
   }
 
@@ -75,7 +75,7 @@ export default class View extends ItemView {
         continue;
       }
 
-      const list = this.selectedItemsList.createEl('div');
+      const list = this.selectedItemsLists.createEl('div');
       list.className = 'tada-list';
 
       const listHeader = list.createEl('h3');
@@ -90,7 +90,7 @@ export default class View extends ItemView {
         li.className = 'tada-list-item';
         li.onclick = ((fileName: string, s: Item) => {
           this.selectedItems[fileName] = this.selectedItems[fileName].filter(i => i !== s);
-          this.selectedItemsList.dispatchEvent(selectedItemEvent);
+          this.selectedItemsLists.dispatchEvent(selectedItemEvent);
         }).bind(this, fileName, s);
 
         const checkbox = li.createEl('input');
@@ -142,7 +142,7 @@ export default class View extends ItemView {
           };
 
           this.selectedItems[fileName].push(i);
-          this.selectedItemsList.dispatchEvent(selectedItemEvent);
+          this.selectedItemsLists.dispatchEvent(selectedItemEvent);
         }
 
         const checkbox = li.createEl('input');
