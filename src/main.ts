@@ -1,4 +1,4 @@
-import { Plugin, WorkspaceLeaf, addIcon } from 'obsidian';
+import { Plugin, WorkspaceLeaf, addIcon, TFile } from 'obsidian';
 
 import { VIEW_TYPE_TADA, TADA_TAG, listIcon } from './constants';
 import View from './view';
@@ -38,50 +38,50 @@ export default class TADA extends Plugin {
       type: VIEW_TYPE_TADA,
     });
 
-    this.refresh();
+    this.parseAllFiles();
   }
 
   onLayoutReady() {
-    this.registerEvent(this.app.vault.on('create', this.refresh.bind(this)));
-    this.registerEvent(this.app.vault.on('modify', this.refresh.bind(this)));
-    this.registerEvent(this.app.vault.on('rename', this.refresh.bind(this)));
-    this.registerEvent(this.app.vault.on('delete', this.refresh.bind(this)));
+    this.registerEvent(this.app.vault.on('create', ((e: TFile) => this.parseFile(e.path)).bind(this)));
+    this.registerEvent(this.app.vault.on('modify', ((e: TFile) => this.parseFile(e.path)).bind(this)));
+    this.registerEvent(this.app.vault.on('rename', ((e: TFile) => this.parseFile(e.path)).bind(this)));
+    this.registerEvent(this.app.vault.on('delete', ((e: TFile) => this.parseFile(e.path)).bind(this)));
 
-    this.refresh();
+    this.parseAllFiles();
   }
 
-  async refresh() {
+  async parseAllFiles() {
     // View is not in DOM, no need to refresh
     if (!this.tadaView) {
       return;
     }
 
-    const { vault, metadataCache } = this.app;
-
-    let tadaItems: { [fileName: string]: Item[] } = {};
-
-    for (const md of vault.getMarkdownFiles()) {
-      const cached = metadataCache.getFileCache(md);
-      if (!cached) {
-        continue;
-      }
-
-      const tadaTag = cached.tags && cached.tags.find(t => t.tag === TADA_TAG);
-      if (!tadaTag) {
-        continue;
-      }
-
-      const content = await vault.adapter.read(md.path);
-      let startAt = tadaTag.position.start.line + 1;
-
-      tadaItems[md.basename] = parseMD(content, startAt);
+    for (const md of this.app.vault.getMarkdownFiles()) {
+      this.parseFile(md.path);
     }
-
-    this.tadaView.update(tadaItems);
   }
 
-  onunload() {
-    this.saveData(this.tadaView.selectedItems);
+  async parseFile(filePath: string) {
+    const { vault, metadataCache } = this.app;
+
+    const cached = metadataCache.getCache(filePath);
+    if (!cached) {
+      return;
+    }
+
+    const tadaTag = cached.tags && cached.tags.find(t => t.tag === TADA_TAG);
+    if (!tadaTag) {
+      return;
+    }
+
+    const content = await vault.adapter.read(filePath);
+    let startAt = tadaTag.position.start.line + 1;
+
+    this.tadaView.updateItemsForFile(filePath, parseMD(content, startAt));
+  }
+
+  async onunload() {
+   await this.tadaView.saveState();
 
     this.app.workspace
       .getLeavesOfType(VIEW_TYPE_TADA)

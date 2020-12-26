@@ -3,15 +3,17 @@ import { Plugin, ItemView, WorkspaceLeaf } from 'obsidian';
 import { VIEW_TYPE_TADA } from './constants';
 import Item from './item';
 
-const selectedItemEvent = new Event('selected-item');
-
 export default class View extends ItemView {
-  selectedItems: { [fileName: string]: Item[] };
+  private listsContainer: HTMLDivElement;
+  private selectedListsContainer: HTMLDivElement;
+
+  private itemsForFile: { [fileName: string]: { items: Item[] } };
+  private nodeForFileItems: { [fileName: string]: HTMLDivElement};
+
+  private selectedItemsForFile: { [fileName: string]: { items: Item[] } };
+  private nodeForSelectedItems: { [fileName: string]: HTMLDivElement };
 
   private plugin: Plugin;
-
-  private itemLists: HTMLDivElement;
-  private selectedItemsLists: HTMLDivElement;
 
   constructor(plugin: Plugin, leaf: WorkspaceLeaf) {
     super(leaf);
@@ -21,14 +23,19 @@ export default class View extends ItemView {
     const container = this.containerEl.children[1].createEl('div');
     container.className = 'tada-container';
 
-    const selectedItemsLists = container.createEl('div');
-    selectedItemsLists.className = 'tada-selected-lists';
-    selectedItemsLists.addEventListener('selected-item', this.updateSelectedItems.bind(this));
-    this.selectedItemsLists = selectedItemsLists;
+    const selectedListsContainer = container.createEl('div');
+    selectedListsContainer.id = 'tada-selected-lists';
+    this.selectedListsContainer = selectedListsContainer;
+    this.selectedListsContainer.addEventListener('selected-item',
+      ((e: CustomEvent) => this.updateSelectedItemsForfile(e.detail.fileName)).bind(this)
+    );
 
-    const itemLists = container.createEl('div');
-    itemLists.className = 'tada-lists';
-    this.itemLists = itemLists;
+    const listsContainer = container.createEl('div');
+    listsContainer.id = 'tada-lists';
+    this.listsContainer = listsContainer;
+
+    this.nodeForFileItems = {};
+    this.nodeForSelectedItems = {};
   }
 
   getViewType(): string {
@@ -43,39 +50,54 @@ export default class View extends ItemView {
     return 'tada-list-icon';
   }
 
+  async saveState() {
+    const { itemsForFile, selectedItemsForFile } = this;
+    await this.plugin.saveData({ itemsForFile, selectedItemsForFile });
+  }
+
+  async restoreState() {
+    const data = await this.plugin.loadData();
+
+    this.itemsForFile = data.itemsForFile || {};
+    this.selectedItemsForFile = data.selectedItemsForFile || {};
+  }
+
   async onload() {
-    this.selectedItems = await this.plugin.loadData() || {};
+    await this.restoreState();
   }
 
   async onunload() {
-    await this.plugin.saveData(this.selectedItems);
+    await this.saveState();
   }
 
-  removeItemsFrom(parent: HTMLDivElement) {
-    parent
-      .querySelectorAll('.tada-list')
-      .forEach(n => n.remove());
-  }
+  updateItemsForFile(fileName: string,  items: Item[]) {
+    // Ensure we've intialized `itemsForFile` for the file
+    if (!this.itemsForFile[fileName]) {
+      this.itemsForFile[fileName] = { items };
+    } else {
+      this.itemsForFile[fileName].items = items;
+    }
 
-  updateSelectedItems() {
-    this.removeItemsFrom(this.selectedItemsLists);
-    this.drawSelectedItems(this.selectedItems);
-  }
-
-  update(items: { [fileName: string]: Item[] }) {
-    this.removeItemsFrom(this.itemLists);
-    this.drawAllItems(items);
-
-    this.updateSelectedItems();
-  }
-
-  drawSelectedItems(selectedItems: { [fileName: string]: Item[] }) {
-    for (const [fileName, selected] of Object.entries(selectedItems)) {
-      if (!selected.length) {
-        continue;
+    // Keep the selected items with current `checked` that still exists in the original file
+    if (this.selectedItemsForFile[fileName]) {
+      const selectedItemsToBeKept = [];
+      for (const selected of this.selectedItemsForFile[fileName].items) {
+        for (const item of items) {
+          if (selected.content === item.content) {
+            selectedItemsToBeKept.push(item);
+          }
+        }
       }
 
-      const list = this.selectedItemsLists.createEl('div');
+      this.selectedItemsForFile[fileName].items = selectedItemsToBeKept;
+
+      // Trigger update of the selected items of this file
+      this.selectedListsContainer.dispatchEvent(new CustomEvent('selected-item', { detail: { fileName } }));
+    }
+
+    if (!this.nodeForFileItems[fileName]) {
+      // Ensure we got a DOM node for the list
+      const list = this.listsContainer.createEl('div');
       list.className = 'tada-list';
 
       const listHeader = list.createEl('h3');
@@ -83,32 +105,63 @@ export default class View extends ItemView {
       listHeader.innerHTML = fileName;
       listHeader.onclick = () => this.app.workspace.openLinkText(fileName, fileName);
 
-      const ul = list.createEl('ul');
+      this.nodeForFileItems[fileName] = list;
+    }
 
-      for (let s of selected) {
-        const li = ul.createEl('li');
-        li.className = 'tada-list-item';
-        li.onclick = ((fileName: string, s: Item) => {
-          this.selectedItems[fileName] = this.selectedItems[fileName].filter(i => i !== s);
-          this.selectedItemsLists.dispatchEvent(selectedItemEvent);
-        }).bind(this, fileName, s);
+    // Remove all lists for this file before drawing them again
+    this.nodeForFileItems[fileName].querySelectorAll('ul').forEach(n => n.remove());
+    this.drawItemsForFile(fileName);
+  }
 
-        const checkbox = li.createEl('input');
-        checkbox.setAttr('type', 'checkbox');
-        checkbox.className = 'tada-list-item-checkbox';
-        checkbox.checked = s.checked;
-        checkbox.disabled = true;
+  drawItemsForFile(fileName: string) {
+    if (!this.itemsForFile[fileName]) {
+      console.warn(`### No items to draw for file '${fileName}'`);
+      return;
+    }
 
-        const label = li.createEl('label');
-        label.innerHTML = s.content;
-        label.className = s.checked ? 'tada-list-item is-checked' : 'tada-list-item';
+    const { items } = this.itemsForFile[fileName];
+
+    const ul = this.nodeForFileItems[fileName].createEl('ul');
+    for (const item of items) {
+      const li = ul.createEl('li');
+      li.className = 'tada-list-item';
+      li.onclick = () => {
+        if (!this.selectedItemsForFile[fileName]) {
+          this.selectedItemsForFile[fileName] = { items: [], folded: false };
+        }
+
+        // Item is already selected
+        if (this.selectedItemsForFile[fileName].items.indexOf(item) >= 0) {
+          return;
+        };
+
+        this.selectedItemsForFile[fileName].items.push(item);
+        this.selectedListsContainer.dispatchEvent(new CustomEvent('selected-item', { detail: { fileName } }));
       }
+
+      const checkbox = li.createEl('input');
+      checkbox.setAttr('type', 'checkbox');
+      checkbox.className = 'tada-list-item-checkbox';
+      checkbox.checked = item.checked;
+      checkbox.disabled = true;
+
+      const label = li.createEl('label');
+      label.innerHTML = item.content;
+      label.className = item.checked ? 'tada-list-item is-checked' : 'tada-list-item';
     }
   }
 
-  drawAllItems(allItems: { [fileName: string]: Item[] }) {
-    for (const [fileName, items] of Object.entries(allItems)) {
-      const list = this.itemLists.createEl('div');
+  updateSelectedItemsForfile(fileName: string) {
+    // Clean the node for this file as there are no items for this file
+    if (!this.selectedItemsForFile[fileName].items || this.selectedItemsForFile[fileName].items.length === 0) {
+      this.selectedListsContainer.removeChild(this.nodeForSelectedItems[fileName]);
+      this.nodeForSelectedItems[fileName] = null;
+      return;
+    }
+
+    // Ensure there is a node for this file
+    if (!this.nodeForSelectedItems[fileName]) {
+      const list = this.selectedListsContainer.createEl('div');
       list.className = 'tada-list';
 
       const listHeader = list.createEl('h3');
@@ -116,45 +169,36 @@ export default class View extends ItemView {
       listHeader.innerHTML = fileName;
       listHeader.onclick = () => this.app.workspace.openLinkText(fileName, fileName);
 
-      const ul = list.createEl('ul');
-      ul.className = 'tada-list';
+      this.nodeForSelectedItems[fileName] = list;
+    }
 
-      for (let i of items) {
-        if (this.selectedItems[fileName]) {
-          // Update the already selected item to keep `checked` in sync
-          this.selectedItems[fileName].forEach(s => {
-            if (s.content === i.content) {
-              s.checked = i.checked;
-            }
-          });
-        }
+    // Remove all lists for this file before drawing them again
+    this.nodeForSelectedItems[fileName].querySelectorAll('ul').forEach(n => n.remove());
+    this.drawSelectedItemsForFile(fileName);
+  }
 
-        const li = ul.createEl('li');
-        li.className = 'tada-list-item';
-        li.onclick = () => {
-          if (!this.selectedItems[fileName]) {
-            this.selectedItems[fileName] = [];
-          }
+  drawSelectedItemsForFile(fileName: string) {
+    const { items } = this.selectedItemsForFile[fileName];
 
-          // Item is already selected
-          if (this.selectedItems[fileName].indexOf(i) >= 0) {
-            return;
-          };
+    const ul = this.nodeForSelectedItems[fileName].createEl('ul');
 
-          this.selectedItems[fileName].push(i);
-          this.selectedItemsLists.dispatchEvent(selectedItemEvent);
-        }
+    for (const item of items) {
+      const li = ul.createEl('li');
+      li.className = 'tada-list-item';
+      li.onclick = ((fileName: string, i: Item) => {
+        this.selectedItemsForFile[fileName].items = this.selectedItemsForFile[fileName].items.filter(s => s !== i);
+        this.selectedListsContainer.dispatchEvent(new CustomEvent('selected-item', { detail: { fileName } }));
+      }).bind(this, fileName, item);
 
-        const checkbox = li.createEl('input');
-        checkbox.setAttr('type', 'checkbox');
-        checkbox.className = 'tada-list-item-checkbox';
-        checkbox.checked = i.checked;
-        checkbox.disabled = true;
+      const checkbox = li.createEl('input');
+      checkbox.setAttr('type', 'checkbox');
+      checkbox.className = 'tada-list-item-checkbox';
+      checkbox.checked = item.checked;
+      checkbox.disabled = true;
 
-        const label = li.createEl('label');
-        label.innerHTML = i.content;
-        label.className = i.checked ? 'tada-list-item is-checked' : 'tada-list-item';
-      }
+      const label = li.createEl('label');
+      label.innerHTML = item.content;
+      label.className = item.checked ? 'tada-list-item is-checked' : 'tada-list-item';
     }
   }
 };
