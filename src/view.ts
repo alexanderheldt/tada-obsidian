@@ -7,10 +7,10 @@ export default class View extends ItemView {
   private listsContainer: HTMLDivElement;
   private selectedListsContainer: HTMLDivElement;
 
-  private itemsForFile: { [fileName: string]: { items: Item[] } };
+  private itemsForFile: { [fileName: string]: { items: Item[], folded: boolean } };
   private nodeForFileItems: { [fileName: string]: HTMLDivElement};
 
-  private selectedItemsForFile: { [fileName: string]: { items: Item[] } };
+  private selectedItemsForFile: { [fileName: string]: { items: Item[], folded: boolean } };
   private nodeForSelectedItems: { [fileName: string]: HTMLDivElement };
 
   private plugin: Plugin;
@@ -73,7 +73,7 @@ export default class View extends ItemView {
   updateItemsForFile(fileName: string,  items: Item[]) {
     // Ensure we've intialized `itemsForFile` for the file
     if (!this.itemsForFile[fileName]) {
-      this.itemsForFile[fileName] = { items };
+      this.itemsForFile[fileName] = { items, folded: false };
     } else {
       this.itemsForFile[fileName].items = items;
     }
@@ -94,6 +94,9 @@ export default class View extends ItemView {
       // Trigger update of the selected items of this file
       this.selectedListsContainer.dispatchEvent(new CustomEvent('selected-item', { detail: { fileName } }));
     }
+
+    // TODO remove node if items.length === 0
+    // TODO handle new files
 
     if (!this.nodeForFileItems[fileName]) {
       // Ensure we got a DOM node for the list
@@ -119,9 +122,15 @@ export default class View extends ItemView {
       return;
     }
 
-    const { items } = this.itemsForFile[fileName];
+    const { items, folded } = this.itemsForFile[fileName];
 
     const ul = this.nodeForFileItems[fileName].createEl('ul');
+    if (folded) {
+      ul.className = 'is-folded';
+      console.log(`Returning early for FOLDED file: '${fileName}'`);
+      return;
+    }
+
     for (const item of items) {
       const li = ul.createEl('li');
       li.className = 'tada-list-item';
@@ -178,9 +187,14 @@ export default class View extends ItemView {
   }
 
   drawSelectedItemsForFile(fileName: string) {
-    const { items } = this.selectedItemsForFile[fileName];
+    const { items, folded } = this.selectedItemsForFile[fileName];
 
     const ul = this.nodeForSelectedItems[fileName].createEl('ul');
+    if (folded) {
+      ul.className = 'is-folded';
+      console.log(`Returning early for FOLDED file: '${fileName}'`);
+      return;
+    }
 
     for (const item of items) {
       const li = ul.createEl('li');

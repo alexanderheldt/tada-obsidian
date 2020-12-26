@@ -47,3 +47,7 @@
   text-decoration: line-through;
   color: var(--text-faint);
 }
+
+.tada-list ul.is-folded {
+  display: none;
+}
